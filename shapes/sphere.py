@@ -1,6 +1,9 @@
 import math
 from shapes.shape import Shape
 from material import Material
+import logging
+
+log = logging.getLogger(__name__)
 
 class Sphere(Shape):
     def __init__(self):
@@ -27,6 +30,7 @@ class Sphere(Shape):
         if d_sq >= 0:
             # one or two intersections
             d = math.sqrt(d_sq)
+            log.debug("{0} found intersection with {1}".format(self, vector))
             dists = [(-b + d) / (2 * a)]
             if d > 0:
                 dists.append((-b - d) / (2 * a))
@@ -39,3 +43,9 @@ class Sphere(Shape):
 
     def getColorAtPoint(self, point):
         return self.material.color
+
+    def getNormalAtPoint(self, point):
+        return (point - self.position).normalized()
+
+    def __repr__(self):
+        return "Sphere(<{0.x}, {0.y}, {0.z}>, {1})".format(self.position, self.radius)

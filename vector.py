@@ -49,3 +49,12 @@ class Vector:
 
     def __rmul__(self, other):
         return self * other
+
+    def __getattr__(self, attr):
+        if (attr == 'x'):
+            return self.coords[0]
+        if (attr == 'y'):
+            return self.coords[1]
+        if (attr == 'z'):
+            return self.coords[2]
+        return super().__getattr__(attr)

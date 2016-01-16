@@ -1,4 +1,5 @@
 from vector import Vector
+import logging
 
 class Shape:
     def __init__(self):
@@ -8,4 +9,7 @@ class Shape:
         raise NotImplementedError()
 
     def getColorAtPoint(self, point):
+        raise NotImplementedError()
+
+    def getNormalAtPoint(self, point):
         raise NotImplementedError()

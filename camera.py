@@ -1,9 +1,9 @@
-from shapes.shape import Shape
 from vector import Vector
 
-class Camera(Shape):
+class Camera:
     def __init__(self):
         super().__init__()
+        self.position = Vector(0, 0, 0)
         self.point_at = Vector(0, 0, 0)
         self.focal_length = 1
         self.up = Vector(0, 1, 0)
@@ -17,3 +17,6 @@ class Camera(Shape):
 
     def v(self):
         return self.normal().cross(self.u()).normalized()
+
+    def __repr__(self):
+        return("Camera at {0}, pointing {1}".format(self.position, self.point_at))
