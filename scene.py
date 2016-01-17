@@ -84,17 +84,19 @@ class Scene:
 
             if not shadowed:
                 # diffuse
-                diffIntensity = max(lightDir * normal, 0)
+                diffIntensity = min(max(lightDir * normal, 0), 1)
                 diff = color.scale(light.color, diffIntensity)
                 diff = color.component_scale(shapeColor, [x/255 for x in diff])
                 log.debug("Diff: {0} (intensity {1})".format(diff, diffIntensity))
                 result = color.add(result, diff)
 
                 # blinn-phong
-                H = (lightDir + (point - self.camera.position).normalized()).normalized()
-                specAngle = max(normal * H, 0)
-                specIntensity = specAngle ** shape.material.shininess
-                spec = color.scale(light.color, specIntensity)
-                result = color.add(result, spec)
+                if diffIntensity > 0:
+                    viewDir = -(point - self.camera.position).normalized()
+                    halfDir = (lightDir + viewDir).normalized()
+                    specAngle = min(max(halfDir * normal, 0), 1)
+                    specIntensity = specAngle ** shape.material.shininess
+                    spec = color.scale(light.color, specIntensity)
+                    result = color.add(result, spec)
 
         return result

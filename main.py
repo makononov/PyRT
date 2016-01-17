@@ -28,9 +28,14 @@ def initScene():
     scene.ambient_light = color.scale(color.WHITE, 0.1)
 
     light = PointLight()
-    light.position = Vector(2, 5, 5)
+    light.position = Vector(5, 8, 8)
     log.info("Adding {0} to scene".format(light))
     scene.lights.append(light)
+
+    light2 = PointLight()
+    light2.position = Vector(-5, 8, 8)
+    log.info("Adding {0} to scene".format(light2))
+    scene.lights.append(light2)
 
     plane = Plane()
     plane.material.color = color.scale(color.WHITE, 0.5)
@@ -42,7 +47,7 @@ def initScene():
     sphere.position = Vector(1, 2, -3)
     sphere.radius = 1
     sphere.material.color = color.RED
-    sphere.material.shininess = 1.1
+    sphere.material.shininess = 30
     log.info("Adding {0} to scene".format(sphere))
     scene.shapes.append(sphere)
 
@@ -50,7 +55,7 @@ def initScene():
     sphere2.position = Vector(-1, 1, -1.5)
     sphere2.radius = 1
     sphere2.material.color = color.YELLOW
-    sphere2.material.shininess = 1.0
+    sphere2.material.shininess = 30
     log.info("Adding {0} to scene".format(sphere2))
     scene.shapes.append(sphere2)
 
