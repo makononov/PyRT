@@ -6,6 +6,8 @@ from imageplane import ImagePlane
 import random
 
 log = logging.getLogger(__name__)
+trace_depth = 0
+MAX_TRACE_DEPTH = 4
 
 class Scene:
     def __init__(self, image_width = 0, image_height = 0, cam = None):
@@ -29,14 +31,15 @@ class Scene:
         self.ambient_light = color.scale(color.WHITE, 0.2)
         log.info("Scene initialized")
 
+    def fireRay(self, ray, origin, depth):
+        if depth >= MAX_TRACE_DEPTH:
+            log.info("Max trace depth reached")
+            return color.BLACK
 
-    def getColorAt(self, x, y):
         intersection = None
-        log.debug("Firing ray through ({0}, {1})".format(x, y))
-        ray = self.getCameraRay(x,y)
         for shape in self.shapes:
             try:
-                t, point = shape.intersection(ray, self.camera.position)
+                t, point = shape.intersection(ray, origin)
             except TypeError:
                 continue
 
@@ -44,9 +47,14 @@ class Scene:
                 intersection = (t, point, shape)
 
         if intersection:
-            return self.calculateShading(intersection)
+            return self.calculateShading(intersection, depth)
 
         return self.background_color
+
+    def getColorAt(self, x, y):
+        log.debug("Firing ray through ({0}, {1})".format(x, y))
+        ray = self.getCameraRay(x,y)
+        return self.fireRay(ray, self.camera.position, 1)
 
     def getPixelLocation(self, x, y):
         pixel_width = self.image_plane.width / self.image_width
@@ -57,10 +65,11 @@ class Scene:
     def getCameraRay(self, x, y):
         return (self.getPixelLocation(x, y) - self.camera.position).normalized()
 
-    def calculateShading(self, intersection):
+    def calculateShading(self, intersection, depth):
         point = intersection[1]
         shape = intersection[2]
         normal = shape.getNormalAtPoint(point)
+        incident_vector = (point - self.camera.position).normalized()
         shapeColor = shape.getColorAtPoint(point)
         log.debug("Shading {0} {1}".format(shape, point))
 
@@ -92,11 +101,18 @@ class Scene:
 
                 # blinn-phong
                 if diffIntensity > 0:
-                    viewDir = -(point - self.camera.position).normalized()
+                    viewDir = -incident_vector
                     halfDir = (lightDir + viewDir).normalized()
                     specAngle = min(max(halfDir * normal, 0), 1)
                     specIntensity = specAngle ** shape.material.shininess
                     spec = color.scale(light.color, specIntensity)
                     result = color.add(result, spec)
+
+        # reflection
+        if shape.material.reflection > 0:
+            reflective_vector = incident_vector - (2 * (incident_vector * normal) * normal)
+            reflective_component = self.fireRay(reflective_vector, point + (normal * 0.001), depth + 1)
+            result = color.scale(result, 1 - shape.material.reflection)
+            result = color.add(result, color.scale(reflective_component, shape.material.reflection))
 
         return result
