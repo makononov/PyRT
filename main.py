@@ -39,8 +39,9 @@ def initScene():
 
     plane = Plane()
     plane.material.color = color.scale(color.WHITE, 0.5)
-    plane.material.shininess = 0
-    plane.material.reflection = 0.3
+    plane.material.hardness = 0
+    plane.material.specular = 0.5
+    plane.material.reflection = 0.1
     log.info("Adding {0} to scene".format(plane))
     scene.shapes.append(plane)
 
@@ -48,8 +49,9 @@ def initScene():
     sphere.position = Vector(1, 2, -3)
     sphere.radius = 1
     sphere.material.color = color.RED
-    sphere.material.shininess = 30
-    sphere.material.reflection = 0.7
+    sphere.material.specular = 0.5
+    sphere.material.hardness = 50
+    sphere.material.reflection = 0.5
     log.info("Adding {0} to scene".format(sphere))
     scene.shapes.append(sphere)
 
@@ -57,8 +59,9 @@ def initScene():
     sphere2.position = Vector(-1, 1, -1.5)
     sphere2.radius = 1
     sphere2.material.color = color.YELLOW
-    sphere2.material.shininess = 30
-    sphere2.material.reflection = 0.7
+    sphere2.material.specular = 0.5
+    sphere2.material.hardness = 50
+    sphere2.material.reflection = 0.5
     log.info("Adding {0} to scene".format(sphere2))
     scene.shapes.append(sphere2)
 

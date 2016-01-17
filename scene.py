@@ -76,6 +76,7 @@ class Scene:
         # ambient portion
         result = color.component_scale(shapeColor, [x/255 for x in self.ambient_light])
 
+        specular_lights = []
         for light in self.lights:
             # shadow
             lightDir = (light.position - point).normalized()
@@ -99,14 +100,8 @@ class Scene:
                 log.debug("Diff: {0} (intensity {1})".format(diff, diffIntensity))
                 result = color.add(result, diff)
 
-                # blinn-phong
                 if diffIntensity > 0:
-                    viewDir = -incident_vector
-                    halfDir = (lightDir + viewDir).normalized()
-                    specAngle = min(max(halfDir * normal, 0), 1)
-                    specIntensity = specAngle ** shape.material.shininess
-                    spec = color.scale(light.color, specIntensity)
-                    result = color.add(result, spec)
+                    specular_lights.append(light)
 
         # reflection
         if shape.material.reflection > 0:
@@ -114,5 +109,15 @@ class Scene:
             reflective_component = self.fireRay(reflective_vector, point + (normal * 0.001), depth + 1)
             result = color.scale(result, 1 - shape.material.reflection)
             result = color.add(result, color.scale(reflective_component, shape.material.reflection))
+
+        for light in specular_lights:
+            # blinn-phong
+            viewDir = -incident_vector
+            halfDir = (lightDir + viewDir).normalized()
+            specAngle = min(max(halfDir * normal, 0), 1)
+            specIntensity = specAngle ** shape.material.hardness
+            spec = color.scale(light.color, specIntensity)
+            spec = color.scale(spec, shape.material.specular)
+            result = color.add(result, spec)
 
         return result
