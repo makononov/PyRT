@@ -9,9 +9,8 @@ class Sphere(Shape):
     def __init__(self):
         super().__init__()
         self.radius = 0
-        self.material = Material()
 
-    def intersections(self, vector, origin):
+    def intersection(self, vector, origin):
         # Point on the ray is x = (origin + direction * distance)
         # Point on the sphere is mag(x - center)^2 = radius^2
         # Comibne to mag((origin + direction * distance) - center)^2 = radius^2
@@ -25,24 +24,18 @@ class Sphere(Shape):
         # discriminant
         d_sq = (b ** 2) - (4 * a * c)
 
-        intersections = []
+        if d_sq < 0:
+            return None
 
-        if d_sq >= 0:
-            # one or two intersections
-            d = math.sqrt(d_sq)
-            log.debug("{0} found intersection with {1}".format(self, vector))
-            dists = [(-b + d) / (2 * a)]
-            if d > 0:
-                dists.append((-b - d) / (2 * a))
+        d = math.sqrt(d_sq)
+        t = (-b - d) / (2 * a)
+        if t < 0:
+            return None
 
-            for t in dists:
-                point = origin + (vector.normalized() * t)
-                intersections.append((t, point, self))
+        log.debug("{0} found intersection with {1}".format(self, vector))
+        point = origin + (vector.normalized() * t)
 
-        return intersections
-
-    def getColorAtPoint(self, point):
-        return self.material.color
+        return t, point
 
     def getNormalAtPoint(self, point):
         return (point - self.position).normalized()

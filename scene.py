@@ -1,8 +1,11 @@
 from shapes.shape import Shape
+import logging
 import color
 from camera import Camera
 from imageplane import ImagePlane
 import random
+
+log = logging.getLogger(__name__)
 
 class Scene:
     def __init__(self, image_width = 0, image_height = 0, cam = None):
@@ -24,18 +27,26 @@ class Scene:
 
         self.background_color = color.BLACK
         self.ambient_light = color.scale(color.WHITE, 0.2)
-        
-    def getColorAt(self, x, y):
-        intersections = []
-        for shape in self.shapes:
-            shapeints = shape.intersections(self.getCameraRay(x, y), self.camera.position)
-            intersections += [i for i in shapeints if i[0] > 0]
-        try:
-            t, point, shape = sorted(intersections, key = lambda i: i[0])[0]
-            return self.calculateLightValues(shape, point)
+        log.info("Scene initialized")
 
-        except IndexError:
-            return self.background_color
+
+    def getColorAt(self, x, y):
+        intersection = None
+        log.debug("Firing ray through ({0}, {1})".format(x, y))
+        ray = self.getCameraRay(x,y)
+        for shape in self.shapes:
+            try:
+                t, point = shape.intersection(ray, self.camera.position)
+            except TypeError:
+                continue
+
+            if intersection is None or t < intersection[0]:
+                intersection = (t, point, shape)
+
+        if intersection:
+            return self.calculateShading(intersection)
+
+        return self.background_color
 
     def getPixelLocation(self, x, y):
         pixel_width = self.image_plane.width / self.image_width
@@ -46,17 +57,44 @@ class Scene:
     def getCameraRay(self, x, y):
         return (self.getPixelLocation(x, y) - self.camera.position).normalized()
 
-    def calculateLightValues(self, shape, point):
+    def calculateShading(self, intersection):
+        point = intersection[1]
+        shape = intersection[2]
+        normal = shape.getNormalAtPoint(point)
+        shapeColor = shape.getColorAtPoint(point)
+        log.debug("Shading {0} {1}".format(shape, point))
+
         # ambient portion
-        c = color.component_scale(shape.getColorAtPoint(point), [x/255 for x in self.ambient_light])
+        result = color.component_scale(shapeColor, [x/255 for x in self.ambient_light])
 
-        # specular
         for light in self.lights:
-            L = (light.position - point).normalized()
-            factor = L.dot(shape.getNormalAtPoint(point))
-            spec = color.scale(shape.getColorAtPoint(point), shape.material.specular)
-            spec = color.scale(spec, factor)
-            spec = color.component_scale(spec, [x/255 for x in light.color])
-            c = color.add(c, spec)
+            # shadow
+            lightDir = (light.position - point).normalized()
+            lightDist = (light.position - point).magnitude()
+            shadowed = False
+            for shape in self.shapes:
+                try:
+                    dist, point = shape.intersection(lightDir, point + (normal * 0.001))
+                    if dist <= lightDist:
+                        shadowed = True
+                        log.debug("Shadowed by {0} at distance {1}".format(shape, dist))
+                        break
+                except TypeError:
+                    pass
 
-        return c
+            if not shadowed:
+                # diffuse
+                diffIntensity = max(lightDir * normal, 0)
+                diff = color.scale(light.color, diffIntensity)
+                diff = color.component_scale(shapeColor, [x/255 for x in diff])
+                log.debug("Diff: {0} (intensity {1})".format(diff, diffIntensity))
+                result = color.add(result, diff)
+
+                # blinn-phong
+                H = (lightDir + (point - self.camera.position).normalized()).normalized()
+                specAngle = max(normal * H, 0)
+                specIntensity = specAngle ** shape.material.shininess
+                spec = color.scale(light.color, specIntensity)
+                result = color.add(result, spec)
+
+        return result

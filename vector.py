@@ -35,7 +35,7 @@ class Vector:
             return self.dot(other)
 
     def __repr__(self):
-        return "Vector({coords[0]}, {coords[1]}, {coords[2]})".format(coords=self.coords)
+        return "<{0.x}, {0.y}, {0.z}>".format(self)
 
     def __truediv__(self, other):
         if type(other) is int or type(other) is float:
